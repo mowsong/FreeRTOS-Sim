@@ -91,20 +91,27 @@ void vApplicationTickHook( void );
 
 /*-----------------------------------------------------------*/
 
-static void prvTask ( void *pvParameters )
+static void prvTask1 ( void *pvParameters )
 {
-    char task_name[64];
-    TickType_t last_time;
-    TickType_t interval;
-    
-    sprintf(task_name, "%s", pcTaskGetName(NULL));
-    interval = (TickType_t) pvParameters;
-    last_time = xTaskGetTickCount();
+    ( void ) pvParameters;
 
     while (1) {
-        vTaskDelayUntil(&last_time, interval);
-        printf("This is %s - %u\n", task_name, ( unsigned int ) xTaskGetTickCount() );
+        printf("This is task 1 - %u\n", ( unsigned int ) xTaskGetTickCount() );
         fflush( stdout );
+        vTaskDelay(100);
+    }
+}
+
+/*-----------------------------------------------------------*/
+
+static void prvTask2 ( void *pvParameters )
+{
+    ( void ) pvParameters;
+
+    while (1) {
+        printf("This is task 2 - %u\n", ( unsigned int ) xTaskGetTickCount() );
+        fflush( stdout );
+        vTaskDelay(500);
     }
 }
 
@@ -112,8 +119,8 @@ static void prvTask ( void *pvParameters )
 
 int main ( void )
 {
-    xTaskCreate( prvTask, "Task 1", 1000, (void *)100, 3, NULL );
-    xTaskCreate( prvTask, "Task 2", 100, (void *)500, 1, NULL );
+    xTaskCreate( prvTask1, "Task 1", 1000, NULL, 3, NULL );
+    xTaskCreate( prvTask2, "Task 2", 100, NULL, 1, NULL );
 
     /* Start the scheduler itself. */
     vTaskStartScheduler();
