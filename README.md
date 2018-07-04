@@ -7,3 +7,4 @@ Directory description
 - Source: FreeRTOS kernel and POSIX simulator source files
 - Project: the project directory that includes main() and FreeRTOS settings for the POSIX port
 - Demo: demo tasks from the official FreeRTOS release
+- Work: contains my own projects
