@@ -119,8 +119,8 @@ static void prvTask2 ( void *pvParameters )
 
 int main ( void )
 {
-    xTaskCreate( prvTask1, "Task 1", configMINIMAL_STACK_SIZE, NULL, mainTask1_PRIORITY, NULL );
-    xTaskCreate( prvTask2, "Task 2", configMINIMAL_STACK_SIZE, NULL, mainTask2_PRIORITY, NULL );
+    xTaskCreate( prvTask1, "Task 1", 1000, NULL, 3, NULL );
+    xTaskCreate( prvTask2, "Task 2", 100, NULL, 1, NULL );
 
     /* Start the scheduler itself. */
     vTaskStartScheduler();
