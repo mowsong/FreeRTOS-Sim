@@ -174,17 +174,21 @@ static void communication_task ( void *pvParameters )
 }
 
 /*-----------------------------------------------------------*/
-unsigned int matrix_task_loop_tick_count = 0;
-unsigned int communication_task_loop_tick_count = 0;
-unsigned int matrix_task_average_tick_count = 0;
-unsigned int communication_task_average_tick_count = 0;
-
 int matrix_task_last_state = 0;
 int communication_task_last_state = 0;
 
-static void measure_task ( void *pvParameters )
+unsigned int matrix_task_loop_tick_count = 0;
+unsigned int communication_task_loop_tick_count = 0;
+unsigned int matrix_task_average_tick_count = 2000;
+unsigned int communication_task_average_tick_count = 100;
+
+TaskHandle_t matrix_handle;
+TaskHandle_t communication_handle;
+
+static void priorityset_task ( void *pvParameters )
 {
     TickType_t last_time;
+    TaskHandle_t handle;
 
     (void)pvParameters;
 
@@ -194,7 +198,13 @@ static void measure_task ( void *pvParameters )
         printf("%u : matrix task average = %d, communication task average = %d\n", 
             xTaskGetTickCount(), matrix_task_average_tick_count, communication_task_average_tick_count);
         fflush(stdout);
-
+     
+        if (communication_task_average_tick_count > 1000) {
+            vTaskPrioritySet(communication_handle, 4);
+        }
+        else if (communication_task_average_tick_count < 200) {
+            vTaskPrioritySet(communication_handle, 2);
+        }
         vTaskDelayUntil(&last_time, 1000);
     }
 }
@@ -204,9 +214,9 @@ static void measure_task ( void *pvParameters )
 int main ( void )
 {
 
-    xTaskCreate( matrix_task, "Matrix", 1000, NULL, 3, NULL);
-    xTaskCreate( communication_task, "Communication", configMINIMAL_STACK_SIZE, NULL, 4, NULL );
-    xTaskCreate( measure_task, "Measure", configMINIMAL_STACK_SIZE, NULL, 5, NULL );
+    xTaskCreate( matrix_task, "Matrix", 1000, NULL, 3, &matrix_handle );
+    xTaskCreate( communication_task, "Communication", configMINIMAL_STACK_SIZE, NULL, 1, &communication_handle );
+    xTaskCreate( priorityset_task, "Priority Set", configMINIMAL_STACK_SIZE, NULL, 5, NULL );
 
     /* Start the scheduler itself. */
     vTaskStartScheduler();
@@ -275,7 +285,7 @@ void vApplicationTickHook( void )
         /* reset counter */
         matrix_task_loop_tick_count = 0;
     }
-    else if (matrix_task_state == 0) {
+    else if (matrix_task_state == 0) { 
         matrix_task_loop_tick_count = 0;
     }
     else if (matrix_task_state == 1) {
