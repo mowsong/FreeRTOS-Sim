@@ -91,27 +91,126 @@ void vApplicationTickHook( void );
 
 /*-----------------------------------------------------------*/
 
-static void prvTask1 ( void *pvParameters )
+unsigned int matrix_task_loop_tick_count = 0;
+unsigned int communication_task_loop_tick_count = 0;
+unsigned int matrix_task_average_tick_count = 0;
+unsigned int communication_task_average_tick_count = 0;
+
+/*-----------------------------------------------------------*/
+#define SIZE    10
+#define ROW     SIZE
+#define COL     SIZE
+
+static void matrix_task ( void *pvParameters )
 {
-    ( void ) pvParameters;
+    TickType_t t1, t2;
+
+    (void)pvParameters;
+
+    int i;
+    double **a = (double **) pvPortMalloc(ROW * sizeof(double *));
+    for (i=0; i< ROW; i++) {
+        a[i] = (double *)pvPortMalloc(COL * sizeof(double));
+    }
+    double **b = (double **) pvPortMalloc(ROW * sizeof(double *));
+    for (i=0; i< ROW; i++) {
+        b[i] = (double *)pvPortMalloc(COL * sizeof(double));
+    }
+    double **c = (double **) pvPortMalloc(ROW * sizeof(double *));
+    for (i=0; i< ROW; i++) {
+        c[i] = (double *)pvPortMalloc(COL * sizeof(double));
+    }
+
+    double sum = 0;
+    int j, k, l;
+
+    for (i=0; i<SIZE; i++) {
+        for (j=0; j<SIZE; j++) {
+            a[i][j] = 1.5;
+            b[i][j] = 2.6;
+        }
+    }
 
     while (1) {
-        printf("This is task 1 - %u\n", ( unsigned int ) xTaskGetTickCount() );
-        fflush( stdout );
+        long simulationdelay;
+
+        t1 = xTaskGetTickCount(); 
+        printf("%u : Starts matrix task...\n", t1);
+        fflush(stdout);
+
+        for (simulationdelay=0; simulationdelay<1000000000; simulationdelay++); /* make sure to turn off optimzation with -O0 */
+
+        for (i=0; i<SIZE; i++) {
+            for (j=0; j<SIZE; j++) {
+                c[i][j] = 0.0;
+            }
+        }
+
+        for (i=0; i<SIZE; i++) {
+            for (j=0; j<SIZE; j++) {
+                sum = 0.0;
+                for (k=0; k<SIZE; k++) {
+                    for (l=0; l<10; l++) {
+                        sum = sum + a[i][k]*b[k][j];
+                    }
+                }
+                c[i][j] = sum;
+            }
+        }
+        t2 = xTaskGetTickCount(); 
+        matrix_task_loop_tick_count = t2 - t1;
+        if (matrix_task_average_tick_count != 0) {
+            matrix_task_average_tick_count = (matrix_task_average_tick_count + matrix_task_loop_tick_count)/2;
+        }
+        else {
+            matrix_task_average_tick_count = matrix_task_loop_tick_count;
+        }
+        printf("%u : Matrix task done!\n", t2);
+        fflush(stdout);
         vTaskDelay(100);
     }
 }
 
 /*-----------------------------------------------------------*/
-
-static void prvTask2 ( void *pvParameters )
+static void communication_task ( void *pvParameters )
 {
-    ( void ) pvParameters;
+    TickType_t t1, t2;
+    (void)pvParameters;
 
     while (1) {
-        printf("This is task 2 - %u\n", ( unsigned int ) xTaskGetTickCount() );
-        fflush( stdout );
-        vTaskDelay(500);
+        t1 = xTaskGetTickCount(); 
+        printf("%u : Sending data...\n", t1); 
+        fflush(stdout);
+        vTaskDelay(100);
+        t2 = xTaskGetTickCount(); 
+        communication_task_loop_tick_count = t2 - t1;
+        if (communication_task_average_tick_count != 0) {
+            communication_task_average_tick_count = (communication_task_average_tick_count + communication_task_loop_tick_count)/2;
+        }
+        else {
+            communication_task_average_tick_count = communication_task_loop_tick_count;
+        }
+        printf("%u : Data send!\n", t2);
+        fflush(stdout);
+        vTaskDelay(100);
+    }
+}
+
+/*-----------------------------------------------------------*/
+static void measure_task ( void *pvParameters )
+{
+    TickType_t last_time;
+
+    (void)pvParameters;
+
+    last_time = xTaskGetTickCount();
+
+    while(1) {
+        printf("%u : matrix task average = %d, communication task average = %d\n", 
+            xTaskGetTickCount(), matrix_task_average_tick_count, communication_task_average_tick_count);
+        fflush(stdout);
+
+        vTaskDelayUntil(&last_time, 1000);
     }
 }
 
@@ -119,8 +218,10 @@ static void prvTask2 ( void *pvParameters )
 
 int main ( void )
 {
-    xTaskCreate( prvTask1, "Task 1", 1000, NULL, 3, NULL );
-    xTaskCreate( prvTask2, "Task 2", 100, NULL, 1, NULL );
+
+    xTaskCreate( matrix_task, "Matrix", 1000, NULL, 3, NULL);
+    xTaskCreate( communication_task, "Communication", configMINIMAL_STACK_SIZE, NULL, 4, NULL );
+    xTaskCreate( measure_task, "Measure", configMINIMAL_STACK_SIZE, NULL, 5, NULL );
 
     /* Start the scheduler itself. */
     vTaskStartScheduler();
@@ -161,19 +262,21 @@ void vApplicationIdleHook( void )
     memory allocated by the kernel to any task that has since been deleted. */
 
         /* Call the idle task processing used by the full demo.  The simple
-        blinky demo does not use the idle task hook. */
-        //vFullDemoIdleFunction();
+           blinky demo does not use the idle task hook. */
+           //vFullDemoIdleFunction();
 }
+
 /*-----------------------------------------------------------*/
+
 
 void vApplicationTickHook( void )
 {
+    
     /* This function will be called by each tick interrupt if
     configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h.  User code can be
     added here, but the tick hook is called from an interrupt context, so
     code must not attempt to block, and only the interrupt safe FreeRTOS API
     functions can be used (those that end in FromISR()). */
-
 }
 
 /*-----------------------------------------------------------*/

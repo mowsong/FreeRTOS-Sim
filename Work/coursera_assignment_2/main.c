@@ -131,7 +131,7 @@ static void matrix_task ( void *pvParameters )
         long simulationdelay;
 
         matrix_task_state = 1;
-        printf("Starts matrix task...%u\n", xTaskGetTickCount()); fflush(stdout);
+        printf("%u : Starts matrix task...\n", xTaskGetTickCount()); fflush(stdout);
 
         for (simulationdelay=0; simulationdelay<1000000000; simulationdelay++); /* make sure to turn off optimzation with -O0 */
 
@@ -152,7 +152,7 @@ static void matrix_task ( void *pvParameters )
                 c[i][j] = sum;
             }
         }
-        printf("Matrix task done! %u\n", xTaskGetTickCount()); fflush(stdout);
+        printf("%u : Matrix task done!\n", xTaskGetTickCount()); fflush(stdout);
         matrix_task_state = 0;
         vTaskDelay(100);
     }
@@ -165,9 +165,9 @@ static void communication_task ( void *pvParameters )
 
     while (1) {
         communication_task_state = 1;
-        printf("Sending data...%u\n", xTaskGetTickCount()); fflush(stdout);
+        printf("%u : Sending data...\n", xTaskGetTickCount()); fflush(stdout);
         vTaskDelay(100);
-        printf("Data send! %u\n", xTaskGetTickCount()); fflush(stdout);
+        printf("%u : Data send!\n", xTaskGetTickCount()); fflush(stdout);
         communication_task_state = 0;
         vTaskDelay(100);
     }
@@ -191,12 +191,11 @@ static void measure_task ( void *pvParameters )
     last_time = xTaskGetTickCount();
 
     while(1) {
-        printf("%u matrix task average = %d, communication task average = %d\n", 
-            xTaskGetTickCount(),
-            matrix_task_average_tick_count, communication_task_average_tick_count);
+        printf("%u : matrix task average = %d, communication task average = %d\n", 
+            xTaskGetTickCount(), matrix_task_average_tick_count, communication_task_average_tick_count);
         fflush(stdout);
 
-        vTaskDelayUntil(&last_time, 10000);
+        vTaskDelayUntil(&last_time, 1000);
     }
 }
 
@@ -206,7 +205,7 @@ int main ( void )
 {
 
     xTaskCreate( matrix_task, "Matrix", 1000, NULL, 3, NULL);
-    xTaskCreate( communication_task, "Communication", configMINIMAL_STACK_SIZE, NULL, 1, NULL );
+    xTaskCreate( communication_task, "Communication", configMINIMAL_STACK_SIZE, NULL, 4, NULL );
     xTaskCreate( measure_task, "Measure", configMINIMAL_STACK_SIZE, NULL, 5, NULL );
 
     /* Start the scheduler itself. */
@@ -265,7 +264,7 @@ void vApplicationTickHook( void )
     functions can be used (those that end in FromISR()). */
     
     if (matrix_task_state == 0 && matrix_task_last_state == 1) {
-        /* matrix task has complated a loop */
+        /* task has complated a loop */
         if (matrix_task_average_tick_count != 0) {
             matrix_task_average_tick_count = (matrix_task_average_tick_count + matrix_task_loop_tick_count)/2;
         }
@@ -284,7 +283,7 @@ void vApplicationTickHook( void )
     }
 
     if (communication_task_state == 0 && communication_task_last_state == 1) {
-        /* matrix task has complated a loop */
+        /* task has complated a loop */
         if (communication_task_average_tick_count != 0) {
             communication_task_average_tick_count = (communication_task_average_tick_count + communication_task_loop_tick_count)/2;
         }
