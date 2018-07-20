@@ -104,7 +104,7 @@ endif
 # Default value is 64 (_POSIX_THREAD_THREADS_MAX), the minimum number required by POSIX.
 CFLAGS += -DMAX_NUMBER_OF_TASKS=300
 
-CFLAGS += $(INCLUDES) $(CWARNS) -O2
+CFLAGS += $(INCLUDES) $(CWARNS) -O0
 
 ######## Makefile targets ########
 
