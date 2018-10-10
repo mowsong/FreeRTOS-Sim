@@ -185,6 +185,8 @@ unsigned int communication_task_average_tick_count = 100;
 TaskHandle_t matrix_handle;
 TaskHandle_t communication_handle;
 
+#define CHANGE_PRIORITY     1
+
 static void priorityset_task ( void *pvParameters )
 {
     TickType_t last_time;
@@ -198,13 +200,14 @@ static void priorityset_task ( void *pvParameters )
         printf("%u : matrix task average = %d, communication task average = %d\n", 
             xTaskGetTickCount(), matrix_task_average_tick_count, communication_task_average_tick_count);
         fflush(stdout);
-     
+#if (CHANGE_PRIORITY == 1)   
         if (communication_task_average_tick_count > 1000) {
             vTaskPrioritySet(communication_handle, 4);
         }
         else if (communication_task_average_tick_count < 200) {
             vTaskPrioritySet(communication_handle, 2);
         }
+#endif
         vTaskDelayUntil(&last_time, 1000);
     }
 }
